@@ -25,7 +25,7 @@ public interface PetDao {
     @Query("SELECT * FROM pets")
     LiveData<List<PetEntity>> getAllLiveData();
 
-    @Query("SELECT * FROM pets")
-    Flowable<List<PetEntity>> getAllFlowable();
+    @Query("SELECT id FROM pets")
+    Flowable<List<String>> getAllPetId();
 
 }

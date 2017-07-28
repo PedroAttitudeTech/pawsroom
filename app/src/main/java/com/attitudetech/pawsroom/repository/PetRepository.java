@@ -60,8 +60,8 @@ public class PetRepository {
     }
 
 
-    public Flowable<List<PetEntity>> getPetListFlowable(){
-        return petDao.getAllFlowable();
+    public Flowable<List<String>> getAllPetId(){
+        return petDao.getAllPetId();
     }
 
 }

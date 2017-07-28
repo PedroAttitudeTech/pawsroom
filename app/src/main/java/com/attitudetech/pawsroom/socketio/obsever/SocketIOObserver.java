@@ -40,18 +40,18 @@ public abstract class SocketIOObserver implements LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     public void onStart(){
+        Log.e("SocketIO", "Start ");
         startListeners();
-        Log.e("LifeObs", "Start ");
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     public void onStop(){
+        Log.e("SocketIO", "Stop ");
         if (!context.isChangingConfigurations()){
             removeListeners();
-            Log.e("LifeObs", "configs change true");
+            Log.e("SocketIO", "configs change true");
         }
         dispose();
-        Log.e("LifeObs", "Stop ");
     }
 
     protected abstract void startListeners();

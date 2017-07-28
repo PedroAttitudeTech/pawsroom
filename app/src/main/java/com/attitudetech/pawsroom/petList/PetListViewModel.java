@@ -20,7 +20,6 @@ import io.reactivex.Flowable;
 public class PetListViewModel extends AndroidViewModel {
 
     protected LiveData<List<PetEntity>> observablePetList;
-    protected Flowable<List<PetEntity>> flowablePetList;
 
     private PetRepository petRepository;
 
@@ -30,7 +29,6 @@ public class PetListViewModel extends AndroidViewModel {
         super(application);
         petRepository = new PetRepository();
         observablePetList = petRepository.getPetList();
-        flowablePetList = petRepository.getPetListFlowable();
     }
 
     @Override

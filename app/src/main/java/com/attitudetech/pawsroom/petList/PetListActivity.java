@@ -42,30 +42,6 @@ public class PetListActivity extends LifecycleActivity {
                         Log.e("test", petEntity.id);
                     }
                 });
-        mViewModel.flowablePetList
-                .compose(RxUtil.applyFlowableSchedulers())
-                .subscribe(new FlowableSubscriber<List<PetEntity>>() {
-            @Override
-            public void onSubscribe(@NonNull Subscription s) {
-
-            }
-
-            @Override
-            public void onNext(List<PetEntity> petEntityList) {
-
-            }
-
-            @Override
-            public void onError(Throwable t) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-
 
         socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
         getLifecycle().addObserver(socketIoObserver);

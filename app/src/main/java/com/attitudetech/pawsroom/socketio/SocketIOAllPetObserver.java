@@ -8,6 +8,7 @@ import com.attitudetech.pawsroom.repository.PetRepository;
 import com.attitudetech.pawsroom.socketio.obsever.SocketIOObserver;
 import com.attitudetech.pawsroom.util.RxUtil;
 
+import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import io.reactivex.FlowableSubscriber;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.subscribers.DisposableSubscriber;
 
 /**
  * Created by phrc on 7/24/17.
@@ -37,41 +39,13 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void startListeners(){
-//        compositeDisposable.add(
-        petRepository
-                .getPetListFlowable()
-                .compose(RxUtil.applyFlowableSchedulers())
-                .subscribe(new FlowableSubscriber<List<PetEntity>>() {
-                    @Override
-                    public void onSubscribe(@NonNull Subscription s) {
-
-                    }
-
-                    @Override
-                    public void onNext(List<PetEntity> petEntityList) {
-                        Log.e("SocketIO", "Response");
-
-                    }
-
-                    @Override
-                    public void onError(Throwable t) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });
-//        );
-//                        .flatMapIterable(petEntityList -> petEntityList)
-//                        .map(petEntity -> petEntity.id)
-//                        .toList()
-//                        .subscribe((strings, throwable) ->{
-//                                Log.e("SocketIO", "Response");
-//                                SocketIOService
-//                                        .getInstance()
-//                                        .startListenSocketIO(clientName, strings);}));
+        compositeDisposable.add(
+                petRepository
+                        .getAllPetId()
+                        .flatMap(strings -> SocketIOService.getInstance().startListenSocketIO(clientName, strings))
+                        .compose(RxUtil.applyFlowableSchedulers())
+                        .subscribe(r -> {})
+        );
     }
 
     @Override

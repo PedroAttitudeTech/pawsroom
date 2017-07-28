@@ -7,15 +7,24 @@ import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.attitudetech.pawsroom.util.RxUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.observables.ConnectableObservable;
 
 /**
  * Created by phrc on 7/20/17.
@@ -29,6 +38,7 @@ public class SocketIOService{
     private Map<String, Disposable> disposables;
     private static SocketIOService INSTANCE;
 
+
     private SocketIOService() {
         clientsByRoom = new HashMap<>();
         disposables = new HashMap<>();
@@ -41,28 +51,15 @@ public class SocketIOService{
         return INSTANCE;
     }
 
-    public void startListenSocketIO(String clientName, List<String> rooms){
-        Log.e("SocketIO", "startListenSocketIO");
-        if (clientsByRoom.containsKey(clientName)){
-            List<String> clientRoom  = clientsByRoom.get(clientName);
-            for (String room : rooms) {
-                if (!clientRoom.contains(room)){
-                    addRoom(clientName, room);
-                    clientRoom.remove(room);
-                }
-            }
-            if (!clientRoom.isEmpty()){
-                for (String room : clientRoom){
-                    removeRoom(clientName, room);
-                }
-            }
-            return;
-        }
+    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
 
-        clientsByRoom.put(clientName, rooms);
-        for (String room: rooms) {
-            addRoom(clientName, room);
+
+
+        if (rooms.size() >= 1){
+            return addRoom(clientName, rooms.get(0));
         }
+        return Flowable.empty();
+
     }
 
     public void stopListenSocketIO(String clientName){
@@ -73,32 +70,16 @@ public class SocketIOService{
         }
     }
 
-    private void addRoom(String clientName, String room){
-        Log.e("SocketIO", "AddRoom");
-        if (isRoomAvailableForAnotherClient(clientName, room)){
-            return;
-        }
-        Flowable<String> flowable;
-        if (!SocketManager.instance().isAuth()){
-            flowable = authenticate()
-                    .toFlowable(BackpressureStrategy.BUFFER)
-                    .map(socketState -> room);
+    private List<String> removeRooms(String clientName, List<String> rooms){
+        return rooms;
+    }
 
-        }
-        else {
-            flowable = Flowable.just(room);
-        }
-
-        Disposable disposable= flowable
-                .compose(applyGetSocketIOFlowableTranformerForOnePet())
-                .subscribe(socketIoPetInfo -> {
-                    Log.e("Update", socketIoPetInfo.id);
-                });
-
-        disposables.put(room, disposable);
-
-        Log.e("SocketIO", "disposableCreated");
-
+    private Flowable<SocketIoPetInfo> addRoom(String clientName, String room){
+        return authenticate()
+                .map(socketState -> room)
+                .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
+                .toFlowable(BackpressureStrategy.BUFFER)
+                .compose(applyGetSocketIOFlowableTranformerForOnePet());
     }
 
     private void removeRoom(String clientName, String room){

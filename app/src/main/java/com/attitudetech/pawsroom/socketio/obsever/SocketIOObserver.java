@@ -49,7 +49,7 @@ public abstract class SocketIOObserver implements LifecycleObserver {
         Log.e("SocketIO", "Stop ");
         if (!context.isChangingConfigurations()){
             removeListeners();
-            Log.e("SocketIO", "configs change true");
+            Log.e("SocketIO", "configs change false");
         }
         dispose();
     }

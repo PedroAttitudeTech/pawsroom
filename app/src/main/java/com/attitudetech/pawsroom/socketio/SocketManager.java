@@ -34,61 +34,57 @@ public class SocketManager {
     private static final String SERVER_URL_ssl = "https://eu.pawtrails.pet:2004";
 
     private Socket socket;
+    private Map<String, Flowable> listeners;
+    private Observable<SocketState> connectObservable;
+    private static SocketManager instance;
     private ConcurrentMap<String, SocketListener> listeners;
-//    private AtomicBoolean isConnected;
+
 
     SocketManager() {
         try {
             socket = IO.socket(SERVER_URL);
-            listeners = new ConcurrentHashMap<>();
-//            isConnected = new AtomicBoolean();
+            listeners = new HashMap<>();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public static SocketManager instance() {
+        if(instance == null) {
+            instance = new SocketManager();
+        }
+        return instance;
+    }
+
     Observable<SocketState> connect() {
-//        isConnected.set(true);
         return Observable.create(emitter -> {
-            Log.d(TAG, "connect Observable");
-            OnConnectListener onConnectListener = new OnConnectListener(socket);
-            OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
 
-            //TODO add in listeners???
-            socket
-                    .on(Socket.EVENT_CONNECT, onConnectListener)
-                    .on(AUTH_CHECK, authenticationListener)
-                    .on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
-                        @Override
-                        public void call(Object... args) {
-                            Log.d(TAG, "disconnect" + Arrays.toString(args));
-                        }
-                    })
-                    .on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
-                        @Override
-                        public void call(Object... args) {
-                            Log.d(TAG, "error " + Arrays.toString(args));
-
-                        }
-                    });
             if (socket.connected()) {
-                Log.d(TAG, "connected -> on next Authentication");
                 emitter.onNext(SocketState.AUTHENTICATED);
             } else {
-                Log.d(TAG, "connect not connected");
+
+                OnConnectListener onConnectListener = new OnConnectListener(socket);
+                OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
+
+                socket
+                        .on(Socket.EVENT_CONNECT, onConnectListener);
+                socket
+                        .on(AUTH_CHECK, authenticationListener);
+
                 socket.connect();
+
+                emitter.setDisposable(new MainThreadDisposable() {
+                    @Override
+                    protected void onDispose() {
+                        socket
+                                .off(Socket.EVENT_CONNECT, onConnectListener)
+                                .off(AUTH_CHECK, authenticationListener);
+                    }
+                });
+
             }
-            emitter.setDisposable(new MainThreadDisposable() {
-                @Override
-                protected void onDispose() {
-                    Log.d(TAG, "dispose connection listener");
-                    socket
-                            .off(Socket.EVENT_CONNECT, onConnectListener)
-                            .off(AUTH_CHECK, authenticationListener)
-                            .off(Socket.EVENT_DISCONNECT)
-                            .off(Socket.EVENT_CONNECT_ERROR);
-                }
-            });
+
+
         });
     }
 
@@ -124,4 +120,20 @@ public class SocketManager {
             socket.disconnect();
         }
     }
+
+    public Completable off(String channel) {
+        return Completable.fromAction(() -> {
+            socket.off(channel);
+            ((SocketListener)socket.listeners(channel).get(0)).complete();
+            listeners.remove(channel);
+            if(listeners.isEmpty()) {
+                socket.disconnect();
+            }
+        });
+    }
+
+    public void clearInstance(){
+        listeners.clear();
+    }
+
 }

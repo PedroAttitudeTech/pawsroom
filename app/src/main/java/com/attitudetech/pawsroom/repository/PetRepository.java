@@ -34,6 +34,7 @@ public class PetRepository {
     }
 
     public LiveData<List<PetEntity>> getPetList(){
+
         petApiRequester
                 .getPets()
                 .flatMapCompletable(petListResponse ->

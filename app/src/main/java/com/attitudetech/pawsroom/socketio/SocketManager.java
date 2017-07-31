@@ -104,7 +104,7 @@ public class SocketManager {
         return flowable;
     }
 
-    private Completable off(String channel) {
+    public Completable off(String channel) {
         return Completable.fromAction(() -> {
             socket.off(channel);
             ((SocketListener)socket.listeners(channel).get(0)).complete();

@@ -44,7 +44,9 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
                         .getAllPetId()
                         .flatMap(strings -> SocketIOService.getInstance().startListenSocketIO(clientName, strings))
                         .compose(RxUtil.applyFlowableSchedulers())
-                        .subscribe(r -> {})
+                        .subscribe(r -> {
+                            Log.e("SocketIO", "SocketUpdate "+r.id);
+                        })
         );
     }
 

@@ -34,14 +34,11 @@ public class SocketIOService{
 
     //Key clientsName Value rooms
     private Map<String, List<String>> clientsByRoom;
-    //Key room Value Disposable
-    private Map<String, Disposable> disposables;
     private static SocketIOService INSTANCE;
 
 
     private SocketIOService() {
         clientsByRoom = new HashMap<>();
-        disposables = new HashMap<>();
     }
 
     public static SocketIOService getInstance(){
@@ -53,25 +50,23 @@ public class SocketIOService{
 
     public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
 
-
-
-        if (rooms.size() >= 1){
-            return addRoom(clientName, rooms.get(0));
-        }
-        return Flowable.empty();
+        return  authenticate()
+                .toFlowable(BackpressureStrategy.BUFFER)
+                .map(socketState -> rooms)
+                .flatMapIterable(strings -> strings)
+                .flatMap(s -> addRoom(clientName, s))
+                .compose(RxUtil.applyFlowableSchedulers());
 
     }
 
-    public void stopListenSocketIO(String clientName){
-        if (clientsByRoom.containsKey(clientName)){
-            for (String room : clientsByRoom.get(clientName)) {
-                removeRoom(clientName, room);
-            }
-        }
-    }
-
-    private List<String> removeRooms(String clientName, List<String> rooms){
-        return rooms;
+    public Completable stopListenSocketIO(String clientName){
+            return Observable
+                    .fromIterable(
+                            (clientsByRoom.containsKey(clientName)) ?
+                                    clientsByRoom.get(clientName) :
+                                    new ArrayList<>())
+                    .flatMapCompletable(string -> removeRoom(clientName, string))
+                    .compose(RxUtil.applyCompletableSchedulers());
     }
 
     private Flowable<SocketIoPetInfo> addRoom(String clientName, String room){
@@ -82,13 +77,13 @@ public class SocketIOService{
                 .compose(applyGetSocketIOFlowableTranformerForOnePet());
     }
 
-    private void removeRoom(String clientName, String room){
+    private Completable removeRoom(String clientName, String room){
         Log.e("SocketIO", "removeRoom");
-        if (disposables.containsKey(room)
-                && !isRoomAvailableForAnotherClient(clientName, room)){
-            disposables.get(room).dispose();
+        if (!isRoomAvailableForAnotherClient(clientName, room)){
             Log.e("SocketIO", "room removed");
+            return  SocketManager.instance().off(room);
         }
+        return Completable.complete();
     }
 
     private boolean isRoomAvailableForAnotherClient(String client, String room){

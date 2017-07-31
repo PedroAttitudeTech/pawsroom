@@ -11,20 +11,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
-import io.reactivex.Observer;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.observables.ConnectableObservable;
+import io.reactivex.internal.operators.observable.BlockingObservableIterable;
 
 /**
  * Created by phrc on 7/20/17.
@@ -49,6 +43,7 @@ public class SocketIOService{
     }
 
     public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
+        Log.e("SocketIO", "Start Listen");
 
         return  authenticate()
                 .toFlowable(BackpressureStrategy.BUFFER)
@@ -60,39 +55,65 @@ public class SocketIOService{
     }
 
     public Completable stopListenSocketIO(String clientName){
-            return Observable
+        Log.e("SocketIO", "Stop Listen");
+
+        return Observable
                     .fromIterable(
                             (clientsByRoom.containsKey(clientName)) ?
                                     clientsByRoom.get(clientName) :
                                     new ArrayList<>())
-                    .flatMapCompletable(string -> removeRoom(clientName, string))
+                    .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
+                    .flatMapCompletable(string -> removeRoom(string))
+                    .doOnComplete(() -> clientsByRoom.remove(clientName))
                     .compose(RxUtil.applyCompletableSchedulers());
     }
 
     private Flowable<SocketIoPetInfo> addRoom(String clientName, String room){
+        Log.e("SocketIO", "addRoom "+room);
         return authenticate()
                 .map(socketState -> room)
-                .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
+                .filter(s -> !isRoomAlreadyAvailable(s))
+                .map(s -> registerRoomOnClient(clientName, room))
                 .toFlowable(BackpressureStrategy.BUFFER)
                 .compose(applyGetSocketIOFlowableTranformerForOnePet());
     }
 
-    private Completable removeRoom(String clientName, String room){
-        Log.e("SocketIO", "removeRoom");
-        if (!isRoomAvailableForAnotherClient(clientName, room)){
-            Log.e("SocketIO", "room removed");
-            return  SocketManager.instance().off(room);
+    private String registerRoomOnClient(String client, String room){
+        if (!clientsByRoom.containsKey(client)){
+            List<String> rooms = new ArrayList<>();
+            rooms.add(room);
+            clientsByRoom.put(client, rooms);
         }
-        return Completable.complete();
+        else {
+            clientsByRoom.get(client).add(room);
+        }
+        return room;
     }
 
-    private boolean isRoomAvailableForAnotherClient(String client, String room){
+    private Completable removeRoom(String room){
+        return  SocketManager.instance().off(room);
+    }
+
+    private boolean isRoomAlreadyAvailable(String room){
         for (String key : clientsByRoom.keySet()){
-            if (key != client &&
-                    clientsByRoom.get(key).contains(room)){
+            if (clientsByRoom.get(key).contains(room)){
+                Log.e("SocketIO", "room available");
                 return true;
             }
         }
+        Log.e("SocketIO", "room not available");
+        return false;
+    }
+
+    private boolean isRoomAvailableForAnotherClient(String clientName, String room){
+        for (String key : clientsByRoom.keySet()){
+            if (key != clientName &&
+                    clientsByRoom.get(key).contains(room)){
+                Log.e("SocketIO", "room available");
+                return true;
+            }
+        }
+        Log.e("SocketIO", "room not available");
         return false;
     }
 

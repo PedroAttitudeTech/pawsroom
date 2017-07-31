@@ -36,38 +36,12 @@ public class SocketManager {
 
     private Socket socket;
     private Map<String, Flowable> listeners;
-    private Observable<SocketState> connectObservable;
     private static SocketManager instance;
 
     private SocketManager() {
         try {
             socket = IO.socket(SERVER_URL);
             listeners = new HashMap<>();
-            connectObservable = BehaviorSubject.create(emitter -> {
-
-                OnConnectListener onConnectListener = new OnConnectListener(socket);
-                OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
-                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket);
-
-                socket.on(Socket.EVENT_CONNECT, onConnectListener);
-                socket.on(AUTH_CHECK, authenticationListener);
-                socket.on(Socket.EVENT_DISCONNECT, onDisconnectListener);
-
-                if (socket.connected()) {
-                    emitter.onNext(SocketState.AUTHENTICATED);
-                } else {
-                    socket.connect();
-                }
-
-                emitter.setDisposable(new MainThreadDisposable() {
-                    @Override
-                    protected void onDispose() {
-                        socket
-                                .off(Socket.EVENT_CONNECT, onConnectListener)
-                                .off(AUTH_CHECK, authenticationListener);
-                    }
-                });
-            });
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -81,7 +55,35 @@ public class SocketManager {
     }
 
     Observable<SocketState> connect() {
-        return connectObservable;
+        return Observable.create(emitter -> {
+
+            if (socket.connected()) {
+                emitter.onNext(SocketState.AUTHENTICATED);
+            } else {
+
+                OnConnectListener onConnectListener = new OnConnectListener(socket);
+                OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
+
+                socket
+                        .on(Socket.EVENT_CONNECT, onConnectListener);
+                socket
+                        .on(AUTH_CHECK, authenticationListener);
+
+                socket.connect();
+
+                emitter.setDisposable(new MainThreadDisposable() {
+                    @Override
+                    protected void onDispose() {
+                        socket
+                                .off(Socket.EVENT_CONNECT, onConnectListener)
+                                .off(AUTH_CHECK, authenticationListener);
+                    }
+                });
+
+            }
+
+
+        });
     }
 
     void emit(String event, Object... args) {
@@ -98,8 +100,13 @@ public class SocketManager {
 
                     socket.on(channel, listener);
                     socket.connect();
-                }, BackpressureStrategy.LATEST).serialize();
+                    emitter.setDisposable(new MainThreadDisposable() {
+                        @Override
+                        protected void onDispose() {
 
+                        }
+                    });
+                }, BackpressureStrategy.LATEST).serialize();
         listeners.put(channel, flowable);
         return flowable;
     }

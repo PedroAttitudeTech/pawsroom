@@ -52,25 +52,10 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void removeListeners(){
-        Completable
-                .fromAction(() ->  SocketIOService.getInstance().stopListenSocketIO(clientName))
-                .compose(RxUtil.applyCompletableSchedulers())
-                .subscribe(new CompletableObserver() {
-                    @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-
-                    }
-                });
+        SocketIOService
+                .getInstance()
+                .stopListenSocketIO(clientName)
+                .subscribe(() -> {});
     }
 
     @Override

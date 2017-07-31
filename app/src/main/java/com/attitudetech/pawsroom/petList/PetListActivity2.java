@@ -22,7 +22,7 @@ public class PetListActivity2 extends LifecycleActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_two);
 
         mViewModel = ViewModelProviders
                 .of(this)

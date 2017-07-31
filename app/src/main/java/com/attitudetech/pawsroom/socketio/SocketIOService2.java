@@ -12,6 +12,7 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 
 import static com.attitudetech.pawsroom.socketio.SocketManager.GPS_UPDATES;
 import static com.attitudetech.pawsroom.socketio.SocketManager.ROOMJOIN;
@@ -21,11 +22,13 @@ public class SocketIOService2 {
     private SocketManager socketManager;
     private static SocketIOService2 INSTANCE;
 
+    private CompositeDisposable compositeDisposable;
     //Key clientsName Value rooms
     private Map<String, List<String>> clientsByRoom;
 
     private SocketIOService2() {
         socketManager = new SocketManager();
+        compositeDisposable = new CompositeDisposable();
     }
 
     public static SocketIOService2 getInstance(){
@@ -35,7 +38,7 @@ public class SocketIOService2 {
         return INSTANCE;
     }
 
-    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
+    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){compositeDisposable.delete()
         return addRoom(clientName, rooms.get(0));
     }
 

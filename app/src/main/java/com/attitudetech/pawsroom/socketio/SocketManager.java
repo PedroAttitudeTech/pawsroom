@@ -19,6 +19,8 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.MainThreadDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observables.ConnectableObservable;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 
@@ -86,7 +88,7 @@ public class SocketManager {
                                 .off(Socket.EVENT_DISCONNECT, onDisconnectListener);
                     }
                 });
-
+            }
         });
     }
 
@@ -125,6 +127,10 @@ public class SocketManager {
 
     public Observable<SocketState> disconnect() {
         return Observable.create(e -> {
+            ConnectableObservable observable = Observable.just(new Object()).publish();
+            Disposable disposable = observable.connect();
+            disposable.dispose();
+
             if (socket.connected()) {
                 OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
 

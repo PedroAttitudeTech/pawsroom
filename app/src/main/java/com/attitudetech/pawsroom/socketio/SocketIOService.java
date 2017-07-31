@@ -28,7 +28,6 @@ public class SocketIOService{
     private Map<String, List<String>> clientsByRoom;
     private static SocketIOService INSTANCE;
 
-
     private SocketIOService() {
         clientsByRoom = new HashMap<>();
     }
@@ -61,7 +60,7 @@ public class SocketIOService{
                                     clientsByRoom.get(clientName) :
                                     new ArrayList<>())
                     .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
-                    .flatMapCompletable(string -> removeRoom(string))
+                    .flatMapCompletable(this::removeRoom)
                     .doOnComplete(() -> clientsByRoom.remove(clientName))
                     .compose(RxUtil.applyCompletableSchedulers());
     }
@@ -89,7 +88,7 @@ public class SocketIOService{
     }
 
     private Completable removeRoom(String room){
-        return  SocketManager.instance().off(SocketManager.GPS_UDPATES + room);
+        return  SocketManager.instance().off(SocketManager.GPS_UPDATES + room);
     }
 
     private boolean isRoomAlreadyAvailable(String room){

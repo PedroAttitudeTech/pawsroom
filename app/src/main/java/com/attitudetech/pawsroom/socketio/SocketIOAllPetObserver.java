@@ -3,23 +3,11 @@ package com.attitudetech.pawsroom.socketio;
 import android.app.Activity;
 import android.util.Log;
 
-import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 import com.attitudetech.pawsroom.repository.PetRepository;
 import com.attitudetech.pawsroom.socketio.obsever.SocketIOObserver;
 import com.attitudetech.pawsroom.util.RxUtil;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
-import java.util.List;
-
-import io.reactivex.Completable;
-import io.reactivex.CompletableObserver;
-import io.reactivex.FlowableSubscriber;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.subscribers.DisposableSubscriber;
 
 /**
  * Created by phrc on 7/24/17.
@@ -52,14 +40,14 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void removeListeners(){
-        SocketIOService
-                .getInstance()
-                .stopListenSocketIO(clientName)
-                .subscribe(() -> {});
+//        SocketIOService
+//                .getInstance()
+//                .stopListenSocketIO(clientName)
+//                .subscribe(() -> {});
     }
 
     @Override
     protected void dispose(){
-        compositeDisposable.dispose();
+        compositeDisposable.clear();
     }
 }

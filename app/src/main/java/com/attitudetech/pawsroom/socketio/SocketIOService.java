@@ -11,14 +11,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.internal.operators.observable.BlockingObservableIterable;
 
 /**
  * Created by phrc on 7/20/17.
@@ -107,7 +105,7 @@ public class SocketIOService{
 
     private boolean isRoomAvailableForAnotherClient(String clientName, String room){
         for (String key : clientsByRoom.keySet()){
-            if (key != clientName &&
+            if (!key.equals(clientName) &&
                     clientsByRoom.get(key).contains(room)){
                 Log.e("SocketIO", "room available");
                 return true;
@@ -147,7 +145,7 @@ public class SocketIOService{
     }
 
     private Flowable<SocketIoPetInfo> getSocketPetInfoFlowable(String petId) {
-        return SocketManager.instance().on(SocketManager.GPS_UDPATES + petId, new OnGpsDataReceivedListener());
+        return SocketManager.instance().on(SocketManager.GPS_UPDATES + petId, new OnGpsDataReceivedListener());
     }
 
 

@@ -5,7 +5,8 @@ public enum SocketState {
     INITIAL,
     CONNECTED,
     WAITING_AUTHORIZATION,
-    AUTHENTICATED;
+    AUTHENTICATED,
+    DISCONNECTED;
 
 
     public static SocketState getSocketStateFrom(AuthenticationCheck authenticationCheck) {

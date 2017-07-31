@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.attitudetech.pawsroom.socketio.listener.OnAuthenticationListener;
 import com.attitudetech.pawsroom.socketio.listener.OnConnectListener;
+import com.attitudetech.pawsroom.socketio.listener.OnDisconnectListener;
 import com.attitudetech.pawsroom.socketio.listener.SocketListener;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 
@@ -14,12 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.MainThreadDisposable;
 import io.socket.client.IO;
 import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 
 public class SocketManager {
 
@@ -34,7 +35,7 @@ public class SocketManager {
     private static final String SERVER_URL_ssl = "https://eu.pawtrails.pet:2004";
 
     private Socket socket;
-    private Map<String, Flowable> listeners;
+//    private Map<String, Flowable> listeners;
     private Observable<SocketState> connectObservable;
     private static SocketManager instance;
     private ConcurrentMap<String, SocketListener> listeners;
@@ -43,7 +44,7 @@ public class SocketManager {
     SocketManager() {
         try {
             socket = IO.socket(SERVER_URL);
-            listeners = new HashMap<>();
+            listeners = new ConcurrentHashMap<>();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -60,16 +61,19 @@ public class SocketManager {
         return Observable.create(emitter -> {
 
             if (socket.connected()) {
+                Log.d(TAG, "authenticated");
+
                 emitter.onNext(SocketState.AUTHENTICATED);
             } else {
-
+                emitter.onNext(SocketState.DISCONNECTED);
+                Log.d(TAG, "authenticate with server");
                 OnConnectListener onConnectListener = new OnConnectListener(socket);
                 OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
-
+                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, emitter);
                 socket
-                        .on(Socket.EVENT_CONNECT, onConnectListener);
-                socket
-                        .on(AUTH_CHECK, authenticationListener);
+                        .on(Socket.EVENT_CONNECT, onConnectListener)
+                        .on(AUTH_CHECK, authenticationListener)
+                        .on(Socket.EVENT_DISCONNECT, onDisconnectListener);
 
                 socket.connect();
 
@@ -78,7 +82,8 @@ public class SocketManager {
                     protected void onDispose() {
                         socket
                                 .off(Socket.EVENT_CONNECT, onConnectListener)
-                                .off(AUTH_CHECK, authenticationListener);
+                                .off(AUTH_CHECK, authenticationListener)
+                                .off(Socket.EVENT_DISCONNECT, onDisconnectListener);
                     }
                 });
 
@@ -119,6 +124,24 @@ public class SocketManager {
 //            isConnected.set(false);
             socket.disconnect();
         }
+    }
+
+    public Observable<SocketState> disconnect() {
+        return Observable.create(e -> {
+            if (socket.connected()) {
+                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
+
+                socket.on(Socket.EVENT_DISCONNECT, onDisconnectListener);
+                e.setDisposable(new MainThreadDisposable() {
+                    @Override
+                    protected void onDispose() {
+                        socket.off(Socket.EVENT_DISCONNECT, onDisconnectListener);
+                    }
+                });
+            } else {
+                e.onNext(SocketState.DISCONNECTED);
+            }
+        });
     }
 
     public Completable off(String channel) {

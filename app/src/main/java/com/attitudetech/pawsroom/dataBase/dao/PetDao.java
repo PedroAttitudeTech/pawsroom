@@ -28,4 +28,6 @@ public interface PetDao {
     @Query("SELECT id FROM pets")
     Flowable<List<String>> getAllPetId();
 
+    @Insert(onConflict =  OnConflictStrategy.REPLACE)
+    void insert(PetEntity petEntity);
 }

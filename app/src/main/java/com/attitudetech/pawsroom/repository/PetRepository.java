@@ -67,4 +67,8 @@ public class PetRepository {
         return petDao.getAllPetId();
     }
 
+    public void insertOrUpdate(PetEntity pet){
+        petDao.insert(pet);
+    }
+
 }

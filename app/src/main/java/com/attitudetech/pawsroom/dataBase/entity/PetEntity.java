@@ -3,6 +3,8 @@ package com.attitudetech.pawsroom.dataBase.entity;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
+import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
+
 /**
  * Created by phrc on 7/19/17.
  */
@@ -16,4 +18,10 @@ public class PetEntity {
     public String img_url;
     public boolean is_owner;
 
+    public PetEntity() {
+    }
+
+    public PetEntity(SocketIoPetInfo socketIoPetInfo) {
+        this.id = socketIoPetInfo.id;
+    }
 }

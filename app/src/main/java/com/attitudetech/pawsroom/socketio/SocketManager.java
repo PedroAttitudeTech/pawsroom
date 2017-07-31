@@ -87,9 +87,6 @@ public class SocketManager {
                     }
                 });
 
-            }
-
-
         });
     }
 
@@ -146,9 +143,9 @@ public class SocketManager {
 
     public Completable off(String channel) {
         return Completable.fromAction(() -> {
-            socket.off(channel);
             ((SocketListener)socket.listeners(channel).get(0)).complete();
             listeners.remove(channel);
+            socket.off(channel);
             if(listeners.isEmpty()) {
                 socket.disconnect();
             }

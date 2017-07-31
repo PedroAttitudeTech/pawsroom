@@ -89,7 +89,7 @@ public class SocketIOService{
     }
 
     private Completable removeRoom(String room){
-        return  SocketManager.instance().off(room);
+        return  SocketManager.instance().off(SocketManager.GPS_UDPATES + room);
     }
 
     private boolean isRoomAlreadyAvailable(String room){

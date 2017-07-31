@@ -2,6 +2,7 @@ package com.attitudetech.pawsroom.repository;
 
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
+import android.util.Log;
 
 import com.attitudetech.pawsroom.dataBase.DataBaseCreator;
 import com.attitudetech.pawsroom.dataBase.dao.PetDao;
@@ -62,6 +63,7 @@ public class PetRepository {
 
 
     public Flowable<List<String>> getAllPetId(){
+        Log.e("startListeners", "Get pet id");
         return petDao.getAllPetId();
     }
 

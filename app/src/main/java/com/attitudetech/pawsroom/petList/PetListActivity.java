@@ -35,23 +35,28 @@ public class PetListActivity extends LifecycleActivity {
                     }
                 });
 
-        socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
-        getLifecycle().addObserver(socketIoObserver);
 
         findViewById(R.id.button2).setOnClickListener(v -> startActivity(new Intent(getBaseContext(), PetListActivity2.class)));
+
+        socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
+
+        getLifecycle().addObserver(socketIoObserver);
 
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-
-
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.e("ConfigChange", isChangingConfigurations()+"");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }

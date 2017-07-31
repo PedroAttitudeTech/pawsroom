@@ -18,6 +18,7 @@ import com.attitudetech.pawsroom.socketio.SocketIOAllPetObserver;
 public class PetListActivity2 extends LifecycleActivity {
 
     PetListViewModel2 mViewModel;
+    protected SocketIOAllPetObserver socketIoObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +41,11 @@ public class PetListActivity2 extends LifecycleActivity {
         ((Button)findViewById(R.id.button2)).setOnClickListener(v -> {
             startActivity(new Intent(getBaseContext(), PetListActivity.class));
         });
+
+
+        socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
+
+        getLifecycle().addObserver(socketIoObserver);
 
 
     }

@@ -1,10 +1,12 @@
 package com.attitudetech.pawsroom.socketio;
 
 import android.app.Activity;
+import android.arch.lifecycle.Lifecycle;
 import android.util.Log;
 
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 import com.attitudetech.pawsroom.repository.PetRepository;
+import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.obsever.SocketIOObserver;
 import com.attitudetech.pawsroom.util.RxUtil;
 
@@ -39,13 +41,22 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void startListeners(){
+        Log.e("SocketIO", clientName);
+
         compositeDisposable.add(
-                petRepository
+                new PetRepository()
                         .getAllPetId()
-                        .flatMap(strings -> SocketIOService.getInstance().startListenSocketIO(clientName, strings))
+                        .flatMap(strings -> {
+                            Log.e("SocketIO", "Go to start listen " + strings.toString());
+                            return SocketIOService.getInstance().startListenSocketIO(clientName, strings);
+                        })
                         .compose(RxUtil.applyFlowableSchedulers())
-                        .subscribe(r -> {
-                            Log.e("SocketIO", "SocketUpdate "+r.id);
+                        .subscribe(socketIoPetInfo -> {
+                            Log.e("SocketIO", "On Next");
+
+                        }, throwable -> {
+                            Log.e("SocketIO", "On Error");
+
                         })
         );
     }
@@ -60,6 +71,6 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void dispose(){
-        compositeDisposable.dispose();
+        compositeDisposable.clear();
     }
 }

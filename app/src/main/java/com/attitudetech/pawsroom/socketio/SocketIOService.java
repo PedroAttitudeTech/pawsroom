@@ -91,7 +91,7 @@ public class SocketIOService{
     }
 
     private Completable removeRoom(String room){
-        return  SocketManager.instance().off(room);
+        return  SocketManager.instance().off(SocketManager.GPS_UDPATES + room);
     }
 
     private boolean isRoomAlreadyAvailable(String room){
@@ -107,7 +107,7 @@ public class SocketIOService{
 
     private boolean isRoomAvailableForAnotherClient(String clientName, String room){
         for (String key : clientsByRoom.keySet()){
-            if (key != clientName &&
+            if (!key.equals(clientName) &&
                     clientsByRoom.get(key).contains(room)){
                 Log.e("SocketIO", "room available");
                 return true;

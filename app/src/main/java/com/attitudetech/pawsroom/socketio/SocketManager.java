@@ -56,32 +56,28 @@ public class SocketManager {
 
     Observable<SocketState> connect() {
         return Observable.create(emitter -> {
+            OnConnectListener onConnectListener = new OnConnectListener(socket);
+            OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
+
+            socket
+                    .on(Socket.EVENT_CONNECT, onConnectListener);
+            socket
+                    .on(AUTH_CHECK, authenticationListener);
 
             if (socket.connected()) {
                 emitter.onNext(SocketState.AUTHENTICATED);
             } else {
-
-                OnConnectListener onConnectListener = new OnConnectListener(socket);
-                OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
-
-                socket
-                        .on(Socket.EVENT_CONNECT, onConnectListener);
-                socket
-                        .on(AUTH_CHECK, authenticationListener);
-
                 socket.connect();
-
-                emitter.setDisposable(new MainThreadDisposable() {
-                    @Override
-                    protected void onDispose() {
-                        socket
-                                .off(Socket.EVENT_CONNECT, onConnectListener)
-                                .off(AUTH_CHECK, authenticationListener);
-                    }
-                });
-
             }
 
+            emitter.setDisposable(new MainThreadDisposable() {
+                @Override
+                protected void onDispose() {
+                    socket
+                            .off(Socket.EVENT_CONNECT, onConnectListener)
+                            .off(AUTH_CHECK, authenticationListener);
+                }
+            });
 
         });
     }
@@ -113,9 +109,9 @@ public class SocketManager {
 
     public Completable off(String channel) {
         return Completable.fromAction(() -> {
-            socket.off(channel);
             ((SocketListener)socket.listeners(channel).get(0)).complete();
             listeners.remove(channel);
+            socket.off(channel);
             if(listeners.isEmpty()) {
                 socket.disconnect();
             }

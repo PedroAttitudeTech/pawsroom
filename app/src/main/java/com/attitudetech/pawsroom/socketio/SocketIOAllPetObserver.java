@@ -29,14 +29,13 @@ import io.reactivex.subscribers.DisposableSubscriber;
 
 public class SocketIOAllPetObserver extends SocketIOObserver {
 
-    PetRepository petRepository;
+
 
     CompositeDisposable compositeDisposable;
 
     public SocketIOAllPetObserver(Activity context, String clientName) {
         super(context, clientName);
         compositeDisposable = new CompositeDisposable();
-        petRepository = new PetRepository();
     }
 
     @Override
@@ -44,7 +43,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
         Log.e("SocketIO", clientName);
 
         compositeDisposable.add(
-                new PetRepository()
+                petRepository
                         .getAllPetId()
                         .flatMap(strings -> {
                             Log.e("SocketIO", "Go to start listen " + strings.toString());
@@ -52,6 +51,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
                         })
                         .compose(RxUtil.applyFlowableSchedulers())
                         .subscribe(socketIoPetInfo -> {
+                            updateDatabase(socketIoPetInfo);
                             Log.e("SocketIO", "On Next");
 
                         }, throwable -> {

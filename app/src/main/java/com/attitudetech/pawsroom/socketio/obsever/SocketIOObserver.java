@@ -7,7 +7,9 @@ import android.arch.lifecycle.OnLifecycleEvent;
 import android.util.Log;
 
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
+import com.attitudetech.pawsroom.repository.PetRepository;
 import com.attitudetech.pawsroom.socketio.SocketIOService;
+import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 
 import org.reactivestreams.Subscription;
 
@@ -30,10 +32,13 @@ public abstract class SocketIOObserver implements LifecycleObserver {
 
     protected String clientName;
 
+    protected PetRepository petRepository;
 
     public SocketIOObserver(Activity context, String clientName) {
         this.context = context;
         this.clientName = clientName;
+        petRepository = new PetRepository();
+
 
     }
 
@@ -52,6 +57,10 @@ public abstract class SocketIOObserver implements LifecycleObserver {
             Log.e("SocketIO", "configs change false");
         }
         dispose();
+    }
+
+    public void updateDatabase(SocketIoPetInfo socketIoPetInfo){
+        petRepository.insertOrUpdate(new PetEntity(socketIoPetInfo));
     }
 
     protected abstract void startListeners();

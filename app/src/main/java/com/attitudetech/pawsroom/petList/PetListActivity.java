@@ -5,7 +5,6 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 
 import com.attitudetech.pawsroom.R;
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
@@ -15,7 +14,7 @@ public class PetListActivity extends LifecycleActivity {
 
     PetListViewModel mViewModel;
     protected SocketIOAllPetObserver socketIoObserver;
-    static TextView textView;
+//    static TextView textView;
 
 
     @Override
@@ -23,7 +22,7 @@ public class PetListActivity extends LifecycleActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textView = new TextView(this);
+//        textView = new TextView(this);
         mViewModel = ViewModelProviders
                 .of(this)
                 .get(PetListViewModel.class);

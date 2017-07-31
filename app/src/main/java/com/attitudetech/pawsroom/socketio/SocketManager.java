@@ -93,7 +93,7 @@ public class SocketManager {
     }
 
     void emit(String event, Object... args) {
-        Log.d(TAG, "emit " +  event);
+        Log.d(TAG, "emit " +  event + " for " + Arrays.toString(args));
         socket.emit(event, args);
     }
 

@@ -38,14 +38,12 @@ ext {
     rxAndroid = "2.0.1"
     rxJava = "2.1.2"
     support = "26.0.0"
+    architectureComp = "1.0.0-alpha7"
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
+
     compile "com.google.android.gms:play-services-auth:${googlePlay}"
     compile "com.google.android.gms:play-services-maps:${googlePlay}"
     compile "com.google.android.gms:play-services-location:${googlePlay}"
@@ -54,20 +52,18 @@ dependencies {
     compile "com.android.support:recyclerview-v7:${support}"
     compile "com.android.support:cardview-v7:${support}"
     compile "com.android.support:support-v4:${support}"
-    androidTestCompile "com.android.support:support-annotations:${support}"
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:appcompat-v7:26.0.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.google.maps.android:android-maps-utils:0.5'
-    compile 'android.arch.lifecycle:runtime:1.0.0-alpha6'
-    compile 'android.arch.lifecycle:extensions:1.0.0-alpha6'
-    annotationProcessor "android.arch.lifecycle:compiler:1.0.0-alpha6"
-    compile 'android.arch.persistence.room:runtime:1.0.0-alpha6'
-    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha6"
-    compile 'android.arch.persistence.room:rxjava2:1.0.0-alpha6'
+    compile "android.arch.lifecycle:runtime:${architectureComp}"
+    compile "android.arch.lifecycle:extensions:${architectureComp}"
+    annotationProcessor "android.arch.lifecycle:compiler:${architectureComp}"
+    compile "android.arch.persistence.room:runtime:${architectureComp}"
+    annotationProcessor "android.arch.persistence.room:compiler:${architectureComp}"
+    compile "android.arch.persistence.room:rxjava2:${architectureComp}"
     compile "com.squareup.okhttp3:okhttp:${okhttp}"
     compile "com.squareup.okhttp3:logging-interceptor:${okhttp}"
-    testCompile 'org.mockito:mockito-core:1.10.19'
     compile "com.squareup.retrofit2:retrofit:${retrofit}"
     compile "com.squareup.retrofit2:converter-gson:${retrofit}"
     compile "com.jakewharton.retrofit:retrofit2-rxjava2-adapter:${retrofitRxAdapter}"
@@ -78,4 +74,14 @@ dependencies {
     compile 'com.jakewharton.rxbinding2:rxbinding:2.0.0'
     compile 'com.jakewharton.rxbinding2:rxbinding-support-v4:2.0.0'
     compile 'com.jakewharton.rxbinding2:rxbinding-appcompat-v7:2.0.0'
+
+    androidTestCompile "com.android.support:support-annotations:${support}"
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
 }

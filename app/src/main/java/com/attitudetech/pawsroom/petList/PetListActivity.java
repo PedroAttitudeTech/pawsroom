@@ -5,24 +5,17 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
+import android.widget.TextView;
 
 import com.attitudetech.pawsroom.R;
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 import com.attitudetech.pawsroom.socketio.SocketIOAllPetObserver;
-import com.attitudetech.pawsroom.util.RxUtil;
-
-import org.reactivestreams.Subscription;
-
-import java.util.List;
-
-import io.reactivex.FlowableSubscriber;
-import io.reactivex.annotations.NonNull;
 
 public class PetListActivity extends LifecycleActivity {
 
     PetListViewModel mViewModel;
     protected SocketIOAllPetObserver socketIoObserver;
+    static TextView textView;
 
 
     @Override
@@ -30,7 +23,7 @@ public class PetListActivity extends LifecycleActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        textView = new TextView(this);
         mViewModel = ViewModelProviders
                 .of(this)
                 .get(PetListViewModel.class);
@@ -46,9 +39,7 @@ public class PetListActivity extends LifecycleActivity {
         socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
         getLifecycle().addObserver(socketIoObserver);
 
-        ((Button)findViewById(R.id.button2)).setOnClickListener(v -> {
-            startActivity(new Intent(getBaseContext(), PetListActivity2.class));
-        });
+        findViewById(R.id.button2).setOnClickListener(v -> startActivity(new Intent(getBaseContext(), PetListActivity2.class)));
 
     }
 

@@ -11,7 +11,7 @@ import io.socket.emitter.Emitter;
 
 public class OnAuthenticationListener implements Emitter.Listener {
 
-    final static String TAG = "OnAuthenticationListene";
+    private final static String TAG = "OnAuthenticationListene";
 
     private ObservableEmitter<SocketState> emitter;
 

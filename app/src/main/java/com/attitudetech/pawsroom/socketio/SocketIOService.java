@@ -7,28 +7,18 @@ import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.attitudetech.pawsroom.util.RxUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.reactivex.BackpressureStrategy;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
-import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiFunction;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.observables.ConnectableObservable;
 
-/**
- * Created by phrc on 7/20/17.
- */
+import static com.attitudetech.pawsroom.socketio.SocketManager.GPS_UPDATES;
+import static com.attitudetech.pawsroom.socketio.SocketManager.ROOMJOIN;
 
 public class SocketIOService{
 
@@ -37,11 +27,12 @@ public class SocketIOService{
     //Key room Value Disposable
     private Map<String, Disposable> disposables;
     private static SocketIOService INSTANCE;
-
+    private SocketManager socketManager;
 
     private SocketIOService() {
         clientsByRoom = new HashMap<>();
         disposables = new HashMap<>();
+        socketManager = new SocketManager();
     }
 
     public static SocketIOService getInstance(){
@@ -52,9 +43,6 @@ public class SocketIOService{
     }
 
     public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
-
-
-
         if (rooms.size() >= 1){
             return addRoom(clientName, rooms.get(0));
         }
@@ -93,7 +81,7 @@ public class SocketIOService{
 
     private boolean isRoomAvailableForAnotherClient(String client, String room){
         for (String key : clientsByRoom.keySet()){
-            if (key != client &&
+            if (!key.equals(client) &&
                     clientsByRoom.get(key).contains(room)){
                 return true;
             }
@@ -108,8 +96,7 @@ public class SocketIOService{
      * @return an observable which only emits a value if SocketState == AUTHENTICATED
      */
     private Observable<SocketState> authenticate() {
-        return SocketManager
-                .instance()
+        return socketManager
                 .connect()
                 .filter(SocketState.AUTHENTICATED::equals)
                 .compose(RxUtil.applyObservableSchedulers());
@@ -124,14 +111,13 @@ public class SocketIOService{
     }
 
     private String joinRoomFor(String petId) {
-        SocketManager
-                .instance()
-                .emit(SocketManager.ROOMJOIN, petId);
+        socketManager
+                .emit(ROOMJOIN, petId);
         return petId;
     }
 
     private Flowable<SocketIoPetInfo> getSocketPetInfoFlowable(String petId) {
-        return SocketManager.instance().on(SocketManager.GPS_UDPATES + petId, new OnGpsDataReceivedListener());
+        return socketManager.on(GPS_UPDATES + petId, new OnGpsDataReceivedListener());
     }
 
 

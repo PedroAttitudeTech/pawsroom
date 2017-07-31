@@ -2,8 +2,6 @@ package com.attitudetech.pawsroom.socketio.listener;
 
 import android.util.Log;
 
-import com.attitudetech.pawsroom.socketio.SocketManager;
-
 import java.util.Arrays;
 
 import io.socket.client.Socket;
@@ -20,6 +18,6 @@ public class OnDisconnectListener extends SocketListener<String> {
     @Override
     public void call(Object... args) {
         Log.e(TAG, "onconnection " + Arrays.toString(args));
-        SocketManager.instance().clearInstance();
+//        SocketManager.instance().clearInstance();
     }
 }

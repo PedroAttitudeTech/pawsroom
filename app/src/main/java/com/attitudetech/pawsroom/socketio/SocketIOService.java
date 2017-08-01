@@ -11,14 +11,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.internal.operators.observable.BlockingObservableIterable;
 
 /**
  * Created by phrc on 7/20/17.
@@ -42,39 +40,35 @@ public class SocketIOService{
         return INSTANCE;
     }
 
+
+
     public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
         Log.e("SocketIO", "Start Listen");
 
-        return  authenticate()
+        return authenticate()
                 .toFlowable(BackpressureStrategy.BUFFER)
                 .map(socketState -> rooms)
                 .flatMapIterable(strings -> strings)
                 .flatMap(s -> addRoom(clientName, s))
-                .compose(RxUtil.applyFlowableSchedulers());
-
+                .mergeWith(s -> unsubscribeRoom(clientName, rooms));
     }
 
     public Completable stopListenSocketIO(String clientName){
         Log.e("SocketIO", "Stop Listen");
-
         return Observable
-                    .fromIterable(
-                            (clientsByRoom.containsKey(clientName)) ?
-                                    clientsByRoom.get(clientName) :
-                                    new ArrayList<>())
-                    .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
-                    .flatMapCompletable(string -> removeRoom(string))
-                    .doOnComplete(() -> clientsByRoom.remove(clientName))
-                    .compose(RxUtil.applyCompletableSchedulers());
+                .fromIterable(
+                        (clientsByRoom.containsKey(clientName)) ?
+                                clientsByRoom.get(clientName) :
+                                new ArrayList<>())
+                .flatMapCompletable(string -> removeRoom(clientName, string))
+                .doOnComplete(() -> clientsByRoom.remove(clientName));
     }
 
     private Flowable<SocketIoPetInfo> addRoom(String clientName, String room){
         Log.e("SocketIO", "addRoom "+room);
-        return authenticate()
-                .map(socketState -> room)
+        return Flowable.just(room)
                 .filter(s -> !isRoomAlreadyAvailable(s))
                 .map(s -> registerRoomOnClient(clientName, room))
-                .toFlowable(BackpressureStrategy.BUFFER)
                 .compose(applyGetSocketIOFlowableTranformerForOnePet());
     }
 
@@ -90,8 +84,21 @@ public class SocketIOService{
         return room;
     }
 
-    private Completable removeRoom(String room){
-        return  SocketManager.instance().off(SocketManager.GPS_UDPATES + room);
+    private Flowable<SocketIoPetInfo> unsubscribeRoom(String clientName, List<String> rooms){
+        return Flowable
+                .fromIterable((clientsByRoom.containsKey(clientName))?clientsByRoom.get(clientName):new ArrayList<>())
+                .filter(s -> !rooms.contains(s))
+                .flatMapCompletable(s -> removeRoom(clientName, s))
+                .toFlowable();
+    }
+
+    private Completable removeRoom(String clientName, String room){
+        return  Flowable.just(room)
+                .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
+                .flatMapCompletable(s ->
+                        SocketManager
+                                .instance()
+                                .off(SocketManager.GPS_UDPATES + s));
     }
 
     private boolean isRoomAlreadyAvailable(String room){
@@ -127,16 +134,14 @@ public class SocketIOService{
         return SocketManager
                 .instance()
                 .connect()
-                .filter(SocketState.AUTHENTICATED::equals)
-                .compose(RxUtil.applyObservableSchedulers());
+                .filter(SocketState.AUTHENTICATED::equals);
     }
 
     private FlowableTransformer<String, SocketIoPetInfo> applyGetSocketIOFlowableTranformerForOnePet() {
         return upstream -> upstream
                 .map(this::joinRoomFor)
                 .flatMap(this::getSocketPetInfoFlowable)
-                .filter(SocketIoPetInfo::hasNoError)
-                .compose(RxUtil.applyFlowableSchedulers());
+                .filter(SocketIoPetInfo::hasNoError);
     }
 
     private String joinRoomFor(String petId) {

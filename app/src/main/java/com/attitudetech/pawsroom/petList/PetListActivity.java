@@ -38,8 +38,10 @@ public class PetListActivity extends LifecycleActivity {
         mViewModel
                 .observablePetList
                 .observe(this, petEntities -> {
-                    for (PetEntity petEntity : petEntities){
-                        Log.e("test", petEntity.id);
+                    if (petEntities != null && !petEntities.isEmpty()){
+                        for (PetEntity petEntity : petEntities){
+                            Log.e("test", petEntity.id);
+                        }
                     }
                 });
 
@@ -57,6 +59,12 @@ public class PetListActivity extends LifecycleActivity {
     @Override
     protected void onStart() {
         super.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mViewModel.refreshList();
     }
 
     @Override

@@ -1,13 +1,17 @@
 package com.attitudetech.pawsroom.socketio;
 
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.attitudetech.pawsroom.socketio.listener.OnAuthenticationListener;
 import com.attitudetech.pawsroom.socketio.listener.OnConnectListener;
 import com.attitudetech.pawsroom.socketio.listener.OnDisconnectListener;
+import com.attitudetech.pawsroom.socketio.listener.OnGpsDataReceivedListener;
 import com.attitudetech.pawsroom.socketio.listener.SocketListener;
+import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
+import com.jakewharton.rx.ReplayingShare;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -19,8 +23,6 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.MainThreadDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observables.ConnectableObservable;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 
@@ -38,15 +40,16 @@ public class SocketManager {
 
     private Socket socket;
 //    private Map<String, Flowable> listeners;
-    private Observable<SocketState> connectObservable;
     private static SocketManager instance;
-    private ConcurrentMap<String, SocketListener> listeners;
-
+    private Observable<SocketState> connectObservable;
+    private ConcurrentMap<String, SocketListener> listeners2;
+    private ConcurrentMap<String, Flowable<SocketIoPetInfo>> listeners;
 
     SocketManager() {
         try {
             socket = IO.socket(SERVER_URL);
             listeners = new ConcurrentHashMap<>();
+
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -55,41 +58,45 @@ public class SocketManager {
     public static SocketManager instance() {
         if(instance == null) {
             instance = new SocketManager();
+
         }
         return instance;
     }
 
     Observable<SocketState> connect() {
-        return Observable.create(emitter -> {
+        if (connectObservable == null) {
+            connectObservable = Observable
+                    .<SocketState>create(emitter -> {
+//                        socket.connect();TODO remove this. Check to see if this could cause issues
+//                        socket.disconnect();
 
-            if (socket.connected()) {
-                Log.d(TAG, "authenticated");
-
-                emitter.onNext(SocketState.AUTHENTICATED);
-            } else {
-                emitter.onNext(SocketState.DISCONNECTED);
-                Log.d(TAG, "authenticate with server");
-                OnConnectListener onConnectListener = new OnConnectListener(socket);
-                OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
-                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, emitter);
-                socket
-                        .on(Socket.EVENT_CONNECT, onConnectListener)
-                        .on(AUTH_CHECK, authenticationListener)
-                        .on(Socket.EVENT_DISCONNECT, onDisconnectListener);
-
-                socket.connect();
-
-                emitter.setDisposable(new MainThreadDisposable() {
-                    @Override
-                    protected void onDispose() {
+                        emitter.onNext(SocketState.INITIAL);
+                        Log.d(TAG, "authenticate with server");
+                        OnConnectListener onConnectListener = new OnConnectListener(socket, emitter);
+                        OnAuthenticationListener authenticationListener = new OnAuthenticationListener(emitter);
+                        OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, emitter);
                         socket
-                                .off(Socket.EVENT_CONNECT, onConnectListener)
-                                .off(AUTH_CHECK, authenticationListener)
-                                .off(Socket.EVENT_DISCONNECT, onDisconnectListener);
-                    }
-                });
-            }
-        });
+                                .on(Socket.EVENT_CONNECT, onConnectListener)
+                                .on(AUTH_CHECK, authenticationListener)
+                                .on(Socket.EVENT_DISCONNECT, onDisconnectListener);
+
+                        socket.connect();
+
+                        emitter.setDisposable(new MainThreadDisposable() {
+                            @Override
+                            protected void onDispose() {
+                                Log.d(TAG, "dispose Connection Listeners");
+                                socket
+                                        .off(Socket.EVENT_CONNECT, onConnectListener)
+                                        .off(AUTH_CHECK, authenticationListener)
+                                        .off(Socket.EVENT_DISCONNECT, onDisconnectListener);
+                                connectObservable = null;
+                            }
+                        });
+                    })
+                    .compose(ReplayingShare.instance());
+        }
+        return connectObservable;
     }
 
     void emit(String event, Object... args) {
@@ -98,7 +105,6 @@ public class SocketManager {
     }
 
     <T> Flowable<T> on(final String channel, final SocketListener<T> listener) {
-        listeners.put(channel, listener);
         return Flowable
                 .create(emitter -> {
                     listener.setEmitter(emitter);
@@ -111,26 +117,46 @@ public class SocketManager {
                         protected void onDispose() {
                             Log.d(TAG, "dispose " + channel);
                             off(channel, listener);
+                            listeners.remove(channel);
                         }
                     });
                 }, BackpressureStrategy.BUFFER);
     }
 
-    private <T> void off(String channel, SocketListener<T> listener) {
-        listeners.remove(channel);
-        socket.off(channel, listener);
-        if(listeners.isEmpty()) {
-//            isConnected.set(false);
-            socket.disconnect();
+    Flowable<SocketIoPetInfo> on(final @NonNull String petId) {
+
+        String channel = SocketManager.GPS_UPDATES + petId;
+        if  (listeners.containsKey(channel)) {
+            return listeners.get(channel);
         }
+        emit(SocketManager.ROOMJOIN, petId);
+        Flowable<SocketIoPetInfo> socketIoPetInfoFlowable = Flowable
+                .<SocketIoPetInfo>create(emitter -> {
+                    final OnGpsDataReceivedListener listener = new OnGpsDataReceivedListener();
+                    listener.setEmitter(emitter);
+                    Log.d(TAG, "connect channel " + channel);
+
+                    socket.on(channel, listener);
+                    socket.connect();
+
+                    emitter.setDisposable(new MainThreadDisposable() {
+                        @Override
+                        protected void onDispose() {
+                            // We could socket.emit( leave room) here!!!
+                            // But it's not mandatory since the server is handling it
+                            Log.d(TAG, "dispose " + channel);
+                            off(channel, listener);
+                            listeners.remove(channel);
+                        }
+                    });
+                }, BackpressureStrategy.BUFFER)
+                .compose(ReplayingShare.instance());
+        listeners.put(channel,  socketIoPetInfoFlowable);
+        return socketIoPetInfoFlowable;
     }
 
     public Observable<SocketState> disconnect() {
         return Observable.create(e -> {
-            ConnectableObservable observable = Observable.just(new Object()).publish();
-            Disposable disposable = observable.connect();
-            disposable.dispose();
-
             if (socket.connected()) {
                 OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
 
@@ -147,9 +173,17 @@ public class SocketManager {
         });
     }
 
+    private <T> void off(String channel, SocketListener<T> listener) {
+        listeners.remove(channel);
+        socket.off(channel, listener);
+        if(listeners.isEmpty()) {
+            socket.disconnect();
+        }
+    }
+
+
     public Completable off(String channel) {
         return Completable.fromAction(() -> {
-            ((SocketListener)socket.listeners(channel).get(0)).complete();
             listeners.remove(channel);
             socket.off(channel);
             if(listeners.isEmpty()) {

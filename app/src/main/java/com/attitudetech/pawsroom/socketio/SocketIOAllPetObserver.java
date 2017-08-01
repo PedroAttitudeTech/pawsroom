@@ -1,24 +1,16 @@
 package com.attitudetech.pawsroom.socketio;
 
 import android.app.Activity;
-import android.arch.lifecycle.Lifecycle;
 import android.util.Log;
 
-import com.attitudetech.pawsroom.repository.PetRepository;
-import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.obsever.SocketIOObserver;
 import com.attitudetech.pawsroom.util.RxUtil;
 
 import io.reactivex.disposables.CompositeDisposable;
 
-/**
- * Created by phrc on 7/24/17.
- */
-
 public class SocketIOAllPetObserver extends SocketIOObserver {
 
-
-
+    private static final String TAG = "SocketIOAllPetObserver";
     CompositeDisposable compositeDisposable;
 
     public SocketIOAllPetObserver(Activity context, String clientName) {
@@ -39,7 +31,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
                         })
                         .compose(RxUtil.applyFlowableSchedulers())
                         .subscribe(socketIoPetInfo -> {
-                            updateDatabase(socketIoPetInfo);
+//                            updateDatabase(socketIoPetInfo);
                             Log.e("SocketIO", "On Next");
 
                         }, throwable -> {
@@ -59,6 +51,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
 
     @Override
     protected void dispose(){
+        Log.d(TAG, "dispose compositeDisposable");
         compositeDisposable.clear();
     }
 }

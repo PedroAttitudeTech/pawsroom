@@ -3,6 +3,7 @@ package com.attitudetech.pawsroom.socketio;
 import com.attitudetech.pawsroom.socketio.listener.OnGpsDataReceivedListener;
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
+import com.attitudetech.pawsroom.util.IOScheduler;
 import com.attitudetech.pawsroom.util.RxUtil;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class SocketIOService2 {
         return INSTANCE;
     }
 
-    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){compositeDisposable.delete()
+    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
         return addRoom(clientName, rooms.get(0));
     }
 
@@ -71,7 +72,7 @@ public class SocketIOService2 {
         return socketManager
                 .connect()
                 .filter(SocketState.AUTHENTICATED::equals)
-                .compose(RxUtil.applyObservableSchedulers());
+                .compose(IOScheduler.instance());
     }
 
     private FlowableTransformer<String, SocketIoPetInfo> applyGetSocketIOFlowableTranformerForOnePet() {

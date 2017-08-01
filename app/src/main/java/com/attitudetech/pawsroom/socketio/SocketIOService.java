@@ -2,35 +2,28 @@ package com.attitudetech.pawsroom.socketio;
 
 import android.util.Log;
 
-import com.attitudetech.pawsroom.socketio.listener.OnGpsDataReceivedListener;
+import com.attitudetech.pawsroom.repository.PetRepository;
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
+import com.attitudetech.pawsroom.util.IOScheduler;
 import com.attitudetech.pawsroom.util.RxUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import org.reactivestreams.Publisher;
+
 import java.util.List;
-import java.util.Map;
 
 import io.reactivex.BackpressureStrategy;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-
-/**
- * Created by phrc on 7/20/17.
- */
+import io.reactivex.functions.Function;
 
 public class SocketIOService{
 
     //Key clientsName Value rooms
-    private Map<String, List<String>> clientsByRoom;
     private static SocketIOService INSTANCE;
 
-    private SocketIOService() {
-        clientsByRoom = new HashMap<>();
-    }
+    private SocketIOService() {}
 
     public static SocketIOService getInstance(){
         if (INSTANCE == null){
@@ -41,77 +34,34 @@ public class SocketIOService{
 
     public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
         Log.e("SocketIO", "Start Listen");
-
         return  authenticate()
                 .toFlowable(BackpressureStrategy.BUFFER)
-                .map(socketState -> rooms)
-                .flatMapIterable(strings -> strings)
-                .flatMap(s -> addRoom(clientName, s))
+                .flatMap(new Function<SocketState, Publisher<? extends List<String>>>() {
+                    @Override
+                    public Publisher<? extends List<String>> apply(SocketState socketState) throws Exception {
+                        return new PetRepository().getAllPetId();
+                    }
+                })
+                .compose(applyGetSocketIOFlowableTransformer())
                 .compose(RxUtil.applyFlowableSchedulers());
-
     }
 
-    public Completable stopListenSocketIO(String clientName){
-        Log.e("SocketIO", "Stop Listen");
-
-        return Observable
-                    .fromIterable(
-                            (clientsByRoom.containsKey(clientName)) ?
-                                    clientsByRoom.get(clientName) :
-                                    new ArrayList<>())
-                    .filter(s -> !isRoomAvailableForAnotherClient(clientName, s))
-                    .flatMapCompletable(this::removeRoom)
-                    .doOnComplete(() -> clientsByRoom.remove(clientName))
-                    .compose(RxUtil.applyCompletableSchedulers());
-    }
-
-    private Flowable<SocketIoPetInfo> addRoom(String clientName, String room){
-        Log.e("SocketIO", "addRoom "+room);
-        return authenticate()
-                .map(socketState -> room)
-                .filter(s -> !isRoomAlreadyAvailable(s))
-                .map(s -> registerRoomOnClient(clientName, room))
-                .toFlowable(BackpressureStrategy.BUFFER)
+    /**
+     * call this method to transform a Flowable which emits a petList to multiple Flowables. For each
+     * new Flowable we listen for gps updates
+     * @return
+     */
+    public FlowableTransformer<List<String>, SocketIoPetInfo> applyGetSocketIOFlowableTransformer() {
+        return upstream -> upstream
+                .switchMap(new Function<List<String>, Publisher<? extends List<String>>>() {
+                    @Override
+                    public Publisher<? extends List<String>> apply(List<String> item) throws Exception {
+                        return Flowable.just(item);
+                    }
+                })
+                .flatMapIterable(petList1 -> petList1)
+                .distinct(id -> id)
                 .compose(applyGetSocketIOFlowableTranformerForOnePet());
-    }
-
-    private String registerRoomOnClient(String client, String room){
-        if (!clientsByRoom.containsKey(client)){
-            List<String> rooms = new ArrayList<>();
-            rooms.add(room);
-            clientsByRoom.put(client, rooms);
-        }
-        else {
-            clientsByRoom.get(client).add(room);
-        }
-        return room;
-    }
-
-    private Completable removeRoom(String room){
-        return  SocketManager.instance().off(SocketManager.GPS_UPDATES + room);
-    }
-
-    private boolean isRoomAlreadyAvailable(String room){
-        for (String key : clientsByRoom.keySet()){
-            if (clientsByRoom.get(key).contains(room)){
-                Log.e("SocketIO", "room available");
-                return true;
-            }
-        }
-        Log.e("SocketIO", "room not available");
-        return false;
-    }
-
-    private boolean isRoomAvailableForAnotherClient(String clientName, String room){
-        for (String key : clientsByRoom.keySet()){
-            if (!key.equals(clientName) &&
-                    clientsByRoom.get(key).contains(room)){
-                Log.e("SocketIO", "room available");
-                return true;
-            }
-        }
-        Log.e("SocketIO", "room not available");
-        return false;
     }
 
     /**
@@ -125,27 +75,16 @@ public class SocketIOService{
                 .instance()
                 .connect()
                 .filter(SocketState.AUTHENTICATED::equals)
-                .compose(RxUtil.applyObservableSchedulers());
+                .compose(IOScheduler.instance());
     }
 
     private FlowableTransformer<String, SocketIoPetInfo> applyGetSocketIOFlowableTranformerForOnePet() {
         return upstream -> upstream
-                .map(this::joinRoomFor)
                 .flatMap(this::getSocketPetInfoFlowable)
-                .filter(SocketIoPetInfo::hasNoError)
-                .compose(RxUtil.applyFlowableSchedulers());
-    }
-
-    private String joinRoomFor(String petId) {
-        SocketManager
-                .instance()
-                .emit(SocketManager.ROOMJOIN, petId);
-        return petId;
+                .filter(SocketIoPetInfo::hasNoError);
     }
 
     private Flowable<SocketIoPetInfo> getSocketPetInfoFlowable(String petId) {
-        return SocketManager.instance().on(SocketManager.GPS_UPDATES + petId, new OnGpsDataReceivedListener());
+        return SocketManager.instance().on(petId);
     }
-
-
 }

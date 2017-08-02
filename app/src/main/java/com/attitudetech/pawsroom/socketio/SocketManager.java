@@ -7,7 +7,9 @@ import com.attitudetech.pawsroom.socketio.listener.OnAuthenticationListener;
 import com.attitudetech.pawsroom.socketio.listener.OnConnectListener;
 import com.attitudetech.pawsroom.socketio.listener.OnDisconnectListener;
 import com.attitudetech.pawsroom.socketio.listener.OnGpsDataReceivedListener;
+import com.attitudetech.pawsroom.socketio.listener.OnSocketIOEventListener;
 import com.attitudetech.pawsroom.socketio.listener.SocketListener;
+import com.attitudetech.pawsroom.socketio.model.SocketIOEvent;
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.jakewharton.rx.ReplayingShare;
@@ -54,7 +56,6 @@ public class SocketManager {
     static SocketManager instance() {
         if(instance == null) {
             instance = new SocketManager();
-
         }
         return instance;
     }
@@ -100,7 +101,7 @@ public class SocketManager {
         socket.emit(event, args);
     }
 
-    Flowable<SocketIoPetInfo> on(final @NonNull String petId) {
+    Flowable<SocketIoPetInfo> onPetUpdates(final @NonNull String petId) {
 
         String channel = SocketManager.GPS_UPDATES + petId;
         if  (listeners.containsKey(channel)) {
@@ -132,10 +133,30 @@ public class SocketManager {
         return socketIoPetInfoFlowable;
     }
 
+    Flowable<SocketIOEvent> onEvents(final String channel) {
+        return Flowable
+                .<SocketIOEvent>create(emitter -> {
+                    final OnSocketIOEventListener listener = new OnSocketIOEventListener();
+                    listener.setEmitter(emitter);
+
+                    socket.on(channel, listener);
+                    socket.connect();
+
+                    emitter.setDisposable(new MainThreadDisposable() {
+                        @Override
+                        protected void onDispose() {
+                            Log.d(TAG, "dispose " + channel);
+                            off(channel, listener);
+                        }
+                    });
+                }, BackpressureStrategy.BUFFER)
+                .compose(ReplayingShare.instance());
+    }
+
     private <T> void off(String channel, SocketListener<T> listener) {
         listeners.remove(channel);
         socket.off(channel, listener);
-        if(listeners.isEmpty()) {
+        if(listeners.isEmpty() && socket.connected()) {
             socket.disconnect();
         }
     }

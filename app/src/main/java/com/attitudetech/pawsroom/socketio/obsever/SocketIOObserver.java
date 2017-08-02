@@ -1,6 +1,5 @@
 package com.attitudetech.pawsroom.socketio.obsever;
 
-import android.app.Activity;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleObserver;
 import android.arch.lifecycle.OnLifecycleEvent;
@@ -10,12 +9,10 @@ import com.attitudetech.pawsroom.repository.PetRepository;
 
 public abstract class SocketIOObserver implements LifecycleObserver {
 
-    protected Activity context;
 
     protected PetRepository petRepository;
 
-    public SocketIOObserver(Activity context) {
-        this.context = context;
+    public SocketIOObserver() {
         petRepository = new PetRepository();
     }
 
@@ -28,10 +25,10 @@ public abstract class SocketIOObserver implements LifecycleObserver {
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     public void onStop(){
         Log.e("SocketIO", "Stop ");
-        if (!context.isChangingConfigurations()){
-            removeListeners();
-            Log.e("SocketIO", "configs change false");
-        }
+//        if (!context.isChangingConfigurations()){
+//            removeListeners();
+//            Log.e("SocketIO", "configs change false");
+//        }
         dispose();
     }
 

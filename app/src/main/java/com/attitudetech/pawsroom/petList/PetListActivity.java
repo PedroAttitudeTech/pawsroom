@@ -38,7 +38,7 @@ public class PetListActivity extends LifecycleActivity {
 
         findViewById(R.id.button2).setOnClickListener(v -> startActivity(new Intent(getBaseContext(), PetListActivity2.class)));
 
-        socketIoObserver = new SocketIOAllPetObserver(this);
+        socketIoObserver = new SocketIOAllPetObserver();
 
         getLifecycle().addObserver(socketIoObserver);
     }

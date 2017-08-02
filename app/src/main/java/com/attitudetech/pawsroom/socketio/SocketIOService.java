@@ -3,6 +3,7 @@ package com.attitudetech.pawsroom.socketio;
 import android.util.Log;
 
 import com.attitudetech.pawsroom.repository.PetRepository;
+import com.attitudetech.pawsroom.socketio.model.SocketIOEvent;
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.attitudetech.pawsroom.util.IOScheduler;
@@ -71,6 +72,12 @@ public class SocketIOService{
     }
 
     private Flowable<SocketIoPetInfo> getSocketPetInfoFlowable(String petId) {
-        return SocketManager.instance().on(petId);
+        return SocketManager.instance().onPetUpdates(petId);
+    }
+
+    public Flowable<SocketIOEvent> getSocketIOEventsFlowable() {
+        return authenticate()
+                .toFlowable(BackpressureStrategy.BUFFER)
+                .flatMap(socketState -> SocketManager.instance().onEvents(SocketManager.EVENTS));
     }
 }

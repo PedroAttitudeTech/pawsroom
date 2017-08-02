@@ -8,15 +8,12 @@ import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.attitudetech.pawsroom.util.IOScheduler;
 import com.attitudetech.pawsroom.util.RxUtil;
 
-import org.reactivestreams.Publisher;
-
 import java.util.List;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.functions.Function;
 
 public class SocketIOService{
 
@@ -32,16 +29,11 @@ public class SocketIOService{
         return INSTANCE;
     }
 
-    public Flowable<SocketIoPetInfo> startListenSocketIO(String clientName, List<String> rooms){
+    public Flowable<SocketIoPetInfo> startListenSocketIO(){
         Log.e("SocketIO", "Start Listen");
         return  authenticate()
                 .toFlowable(BackpressureStrategy.BUFFER)
-                .flatMap(new Function<SocketState, Publisher<? extends List<String>>>() {
-                    @Override
-                    public Publisher<? extends List<String>> apply(SocketState socketState) throws Exception {
-                        return new PetRepository().getAllPetId();
-                    }
-                })
+                .flatMap(socketState -> new PetRepository().getAllPetId())
                 .compose(applyGetSocketIOFlowableTransformer())
                 .compose(RxUtil.applyFlowableSchedulers());
     }
@@ -53,12 +45,7 @@ public class SocketIOService{
      */
     public FlowableTransformer<List<String>, SocketIoPetInfo> applyGetSocketIOFlowableTransformer() {
         return upstream -> upstream
-                .switchMap(new Function<List<String>, Publisher<? extends List<String>>>() {
-                    @Override
-                    public Publisher<? extends List<String>> apply(List<String> item) throws Exception {
-                        return Flowable.just(item);
-                    }
-                })
+                .switchMap(Flowable::just)
                 .flatMapIterable(petList1 -> petList1)
                 .distinct(id -> id)
                 .compose(applyGetSocketIOFlowableTranformerForOnePet());

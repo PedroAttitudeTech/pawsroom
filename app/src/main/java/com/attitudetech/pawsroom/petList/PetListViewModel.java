@@ -9,25 +9,15 @@ import android.util.Log;
 
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 import com.attitudetech.pawsroom.repository.PetRepository;
-import com.attitudetech.pawsroom.socketio.SocketIOService;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import io.reactivex.Flowable;
-import io.reactivex.schedulers.Schedulers;
-
-/**
- * Created by phrc on 7/19/17.
- */
 
 public class PetListViewModel extends AndroidViewModel {
 
     protected LiveData<List<PetEntity>> observablePetList;
 
     private PetRepository petRepository;
-
-
 
     public PetListViewModel(Application application) {
         super(application);
@@ -47,5 +37,4 @@ public class PetListViewModel extends AndroidViewModel {
     protected void onCleared() {
         super.onCleared();
     }
-
 }

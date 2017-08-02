@@ -16,7 +16,6 @@ public class PetListActivity extends LifecycleActivity {
     protected SocketIOAllPetObserver socketIoObserver;
 //    static TextView textView;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,13 +36,11 @@ public class PetListActivity extends LifecycleActivity {
                     }
                 });
 
-
         findViewById(R.id.button2).setOnClickListener(v -> startActivity(new Intent(getBaseContext(), PetListActivity2.class)));
 
-        socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
+        socketIoObserver = new SocketIOAllPetObserver(this);
 
         getLifecycle().addObserver(socketIoObserver);
-
     }
 
     @Override
@@ -60,7 +57,7 @@ public class PetListActivity extends LifecycleActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        Log.e("ConfigChange", isChangingConfigurations()+"");
+        Log.e("ConfigChange", isChangingConfigurations() + "");
     }
 
     @Override

@@ -5,15 +5,10 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 
 import com.attitudetech.pawsroom.R;
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 import com.attitudetech.pawsroom.socketio.SocketIOAllPetObserver;
-
-/**
- * Created by phrc on 7/25/17.
- */
 
 public class PetListActivity2 extends LifecycleActivity {
 
@@ -38,12 +33,10 @@ public class PetListActivity2 extends LifecycleActivity {
                 });
 
 
-        ((Button)findViewById(R.id.button2)).setOnClickListener(v -> {
-            startActivity(new Intent(getBaseContext(), PetListActivity.class));
-        });
+        findViewById(R.id.button2).setOnClickListener(v -> startActivity(new Intent(getBaseContext(), PetListActivity.class)));
 
 
-        socketIoObserver = new SocketIOAllPetObserver(this, this.getClass().getName());
+        socketIoObserver = new SocketIOAllPetObserver(this);
 
         getLifecycle().addObserver(socketIoObserver);
 

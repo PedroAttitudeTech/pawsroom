@@ -8,21 +8,14 @@ import android.util.Log;
 
 import com.attitudetech.pawsroom.repository.PetRepository;
 
-/**
- * Created by phrc on 7/25/17.
- */
-
 public abstract class SocketIOObserver implements LifecycleObserver {
 
     protected Activity context;
 
-    protected String clientName;
-
     protected PetRepository petRepository;
 
-    public SocketIOObserver(Activity context, String clientName) {
+    public SocketIOObserver(Activity context) {
         this.context = context;
-        this.clientName = clientName;
         petRepository = new PetRepository();
     }
 

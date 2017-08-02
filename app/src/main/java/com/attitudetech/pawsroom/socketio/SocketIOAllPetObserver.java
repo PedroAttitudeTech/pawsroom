@@ -1,6 +1,7 @@
 package com.attitudetech.pawsroom.socketio;
 
 import android.app.Activity;
+import android.support.annotation.WorkerThread;
 import android.util.Log;
 
 import com.attitudetech.pawsroom.socketio.obsever.SocketIOObserver;
@@ -11,44 +12,35 @@ import io.reactivex.disposables.CompositeDisposable;
 public class SocketIOAllPetObserver extends SocketIOObserver {
 
     private static final String TAG = "SocketIOAllPetObserver";
-    CompositeDisposable compositeDisposable;
+    private CompositeDisposable compositeDisposable;
 
-    public SocketIOAllPetObserver(Activity context, String clientName) {
-        super(context, clientName);
+    public SocketIOAllPetObserver(Activity context) {
+        super(context);
         compositeDisposable = new CompositeDisposable();
     }
 
     @WorkerThread
     @Override
     protected void startListeners(){
-        Log.e("SocketIO", clientName);
+        Log.e("SocketIO", TAG);
 
         compositeDisposable.add(
-                petRepository
-                        .getAllPetId()
-                        .flatMap(strings -> {
-                            Log.e("SocketIO", "Go to start listen " + strings.toString());
-                            return SocketIOService.getInstance().startListenSocketIO(clientName, strings);
-                        })
-                        .compose(RxUtil.applyFlowableSchedulers())
-                        .subscribe(socketIoPetInfo -> {
-//                            updateDatabase(socketIoPetInfo);
-                            Log.e("SocketIO", "On Next");
+                        SocketIOService.getInstance().startListenSocketIO()
+                                .compose(RxUtil.applyFlowableSchedulers())
+                                .subscribe(socketIoPetInfo -> {
+        //                            updateDatabase(socketIoPetInfo);
+                                    Log.e("SocketIO", "On Next");
 
-                        }, throwable -> {
-                            Log.e("SocketIO", "On Error");
+                                }, throwable -> {
+                                    Log.e("SocketIO", "On Error");
 
-                        })
+                                })
         );
     }
 
     @WorkerThread
     @Override
     protected void removeListeners(){
-//        SocketIOService
-//                .getInstance()
-//                .stopListenSocketIO(clientName)
-//                .subscribe(() -> {});
     }
 
     @Override

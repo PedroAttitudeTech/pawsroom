@@ -10,15 +10,11 @@ import com.attitudetech.pawsroom.network.ApiClient;
 import com.attitudetech.pawsroom.network.requester.PetApiRequester;
 import com.attitudetech.pawsroom.util.RxUtil;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Observable;
-import java.util.concurrent.Callable;
 
 import io.reactivex.Completable;
 import io.reactivex.CompletableObserver;
 import io.reactivex.Flowable;
-import io.reactivex.Single;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 

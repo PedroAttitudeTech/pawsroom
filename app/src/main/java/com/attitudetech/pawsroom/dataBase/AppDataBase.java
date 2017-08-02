@@ -6,10 +6,6 @@ import android.arch.persistence.room.RoomDatabase;
 import com.attitudetech.pawsroom.dataBase.dao.PetDao;
 import com.attitudetech.pawsroom.dataBase.entity.PetEntity;
 
-/**
- * Created by phrc on 7/19/17.
- */
-
 @Database(entities = {PetEntity.class}, version = 1)
 public abstract class AppDataBase extends RoomDatabase{
 

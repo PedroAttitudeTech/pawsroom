@@ -100,25 +100,6 @@ public class SocketManager {
         socket.emit(event, args);
     }
 
-    <T> Flowable<T> on(final String channel, final SocketListener<T> listener) {
-        return Flowable
-                .create(emitter -> {
-                    listener.setEmitter(emitter);
-
-                    socket.on(channel, listener);
-                    socket.connect();
-
-                    emitter.setDisposable(new MainThreadDisposable() {
-                        @Override
-                        protected void onDispose() {
-                            Log.d(TAG, "dispose " + channel);
-                            off(channel, listener);
-                            listeners.remove(channel);
-                        }
-                    });
-                }, BackpressureStrategy.BUFFER);
-    }
-
     Flowable<SocketIoPetInfo> on(final @NonNull String petId) {
 
         String channel = SocketManager.GPS_UPDATES + petId;
@@ -150,24 +131,6 @@ public class SocketManager {
         listeners.put(channel,  socketIoPetInfoFlowable);
         return socketIoPetInfoFlowable;
     }
-
-//    public Observable<SocketState> disconnect() {
-//        return Observable.create(e -> {
-//            if (socket.connected()) {
-//                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
-//
-//                socket.on(Socket.EVENT_DISCONNECT, onDisconnectListener);
-//                e.setDisposable(new MainThreadDisposable() {
-//                    @Override
-//                    protected void onDispose() {
-//                        socket.off(Socket.EVENT_DISCONNECT, onDisconnectListener);
-//                    }
-//                });
-//            } else {
-//                e.onNext(SocketState.DISCONNECTED);
-//            }
-//        });
-//    }
 
     private <T> void off(String channel, SocketListener<T> listener) {
         listeners.remove(channel);

@@ -6,7 +6,6 @@ import com.attitudetech.pawsroom.repository.PetRepository;
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
 import com.attitudetech.pawsroom.socketio.model.SocketState;
 import com.attitudetech.pawsroom.util.IOScheduler;
-import com.attitudetech.pawsroom.util.RxUtil;
 
 import java.util.List;
 
@@ -22,20 +21,20 @@ public class SocketIOService{
 
     private SocketIOService() {}
 
-    public static SocketIOService getInstance(){
+    static SocketIOService getInstance(){
         if (INSTANCE == null){
             INSTANCE = new SocketIOService();
         }
         return INSTANCE;
     }
 
-    public Flowable<SocketIoPetInfo> startListenSocketIO(){
+    Flowable<SocketIoPetInfo> startListenSocketIO(){
         Log.e("SocketIO", "Start Listen");
         return  authenticate()
                 .toFlowable(BackpressureStrategy.BUFFER)
                 .flatMap(socketState -> new PetRepository().getAllPetId())
                 .compose(applyGetSocketIOFlowableTransformer())
-                .compose(RxUtil.applyFlowableSchedulers());
+                .compose(IOScheduler.instance());
     }
 
     /**
@@ -43,7 +42,7 @@ public class SocketIOService{
      * new Flowable we listen for gps updates
      * @return
      */
-    public FlowableTransformer<List<String>, SocketIoPetInfo> applyGetSocketIOFlowableTransformer() {
+    private FlowableTransformer<List<String>, SocketIoPetInfo> applyGetSocketIOFlowableTransformer() {
         return upstream -> upstream
                 .switchMap(Flowable::just)
                 .flatMapIterable(petList1 -> petList1)

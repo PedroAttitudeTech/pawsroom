@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import io.reactivex.BackpressureStrategy;
-import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.MainThreadDisposable;
@@ -39,10 +38,8 @@ public class SocketManager {
     private static final String SERVER_URL_ssl = "https://eu.pawtrails.pet:2004";
 
     private Socket socket;
-//    private Map<String, Flowable> listeners;
     private static SocketManager instance;
     private Observable<SocketState> connectObservable;
-    private ConcurrentMap<String, SocketListener> listeners2;
     private ConcurrentMap<String, Flowable<SocketIoPetInfo>> listeners;
 
     SocketManager() {
@@ -55,7 +52,7 @@ public class SocketManager {
         }
     }
 
-    public static SocketManager instance() {
+    static SocketManager instance() {
         if(instance == null) {
             instance = new SocketManager();
 
@@ -155,23 +152,23 @@ public class SocketManager {
         return socketIoPetInfoFlowable;
     }
 
-    public Observable<SocketState> disconnect() {
-        return Observable.create(e -> {
-            if (socket.connected()) {
-                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
-
-                socket.on(Socket.EVENT_DISCONNECT, onDisconnectListener);
-                e.setDisposable(new MainThreadDisposable() {
-                    @Override
-                    protected void onDispose() {
-                        socket.off(Socket.EVENT_DISCONNECT, onDisconnectListener);
-                    }
-                });
-            } else {
-                e.onNext(SocketState.DISCONNECTED);
-            }
-        });
-    }
+//    public Observable<SocketState> disconnect() {
+//        return Observable.create(e -> {
+//            if (socket.connected()) {
+//                OnDisconnectListener onDisconnectListener = new OnDisconnectListener(socket, e);
+//
+//                socket.on(Socket.EVENT_DISCONNECT, onDisconnectListener);
+//                e.setDisposable(new MainThreadDisposable() {
+//                    @Override
+//                    protected void onDispose() {
+//                        socket.off(Socket.EVENT_DISCONNECT, onDisconnectListener);
+//                    }
+//                });
+//            } else {
+//                e.onNext(SocketState.DISCONNECTED);
+//            }
+//        });
+//    }
 
     private <T> void off(String channel, SocketListener<T> listener) {
         listeners.remove(channel);
@@ -180,20 +177,4 @@ public class SocketManager {
             socket.disconnect();
         }
     }
-
-
-    public Completable off(String channel) {
-        return Completable.fromAction(() -> {
-            listeners.remove(channel);
-            socket.off(channel);
-            if(listeners.isEmpty()) {
-                socket.disconnect();
-            }
-        });
-    }
-
-    public void clearInstance(){
-        listeners.clear();
-    }
-
 }

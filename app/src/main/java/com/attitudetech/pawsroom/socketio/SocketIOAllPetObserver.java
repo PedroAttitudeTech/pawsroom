@@ -18,6 +18,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
         compositeDisposable = new CompositeDisposable();
     }
 
+    @WorkerThread
     @Override
     protected void startListeners(){
         Log.e("SocketIO", clientName);
@@ -41,6 +42,7 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
         );
     }
 
+    @WorkerThread
     @Override
     protected void removeListeners(){
 //        SocketIOService

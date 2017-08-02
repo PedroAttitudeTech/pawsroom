@@ -1,6 +1,7 @@
 package com.attitudetech.pawsroom.dataBase.entity;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
 import com.attitudetech.pawsroom.socketio.model.SocketIoPetInfo;
@@ -21,6 +22,12 @@ public class PetEntity {
     public PetEntity() {
     }
 
+    @Ignore
+    public PetEntity(String id) {
+        this.id = id;
+    }
+
+    @Ignore
     public PetEntity(SocketIoPetInfo socketIoPetInfo) {
         this.id = socketIoPetInfo.id;
     }

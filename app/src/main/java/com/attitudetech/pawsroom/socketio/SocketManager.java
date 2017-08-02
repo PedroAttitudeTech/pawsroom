@@ -42,7 +42,7 @@ public class SocketManager {
     private Observable<SocketState> connectObservable;
     private ConcurrentMap<String, Flowable<SocketIoPetInfo>> listeners;
 
-    SocketManager() {
+    private SocketManager() {
         try {
             socket = IO.socket(SERVER_URL);
             listeners = new ConcurrentHashMap<>();

@@ -28,7 +28,6 @@ public class SocketIOAllPetObserver extends SocketIOObserver {
                         SocketIOService.getInstance().startListenSocketIO()
                                 .compose(RxUtil.applyFlowableSchedulers())
                                 .subscribe(socketIoPetInfo -> {
-        //                            updateDatabase(socketIoPetInfo);
                                     Log.e("SocketIO", "On Next");
 
                                 }, throwable -> {

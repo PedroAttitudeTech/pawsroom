@@ -38,7 +38,7 @@ ext {
     rxAndroid = "2.0.1"
     rxJava = "2.1.2"
     support = "26.0.0"
-    architectureComp = "1.0.0-alpha7"
+    architectureComp = "1.0.0-alpha8"
 }
 
 dependencies {

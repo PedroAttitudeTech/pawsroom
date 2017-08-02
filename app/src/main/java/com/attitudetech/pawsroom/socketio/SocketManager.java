@@ -1,6 +1,5 @@
 package com.attitudetech.pawsroom.socketio;
 
-
 import android.support.annotation.NonNull;
 import android.util.Log;
 
